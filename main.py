@@ -1,16 +1,27 @@
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, InputFile
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils import executor
 import os
 import datetime
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "280665761"))
+SPREADSHEET_NAME = os.getenv("SPREADSHEET_NAME", "Заявки Telegram")
+SHEET_NAME = os.getenv("SHEET_NAME", "Лист1")
+
+# Авторизация в Google Sheets
+def get_sheet():
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
+    client = gspread.authorize(creds)
+    sheet = client.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
+    return sheet
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
-# Главное меню (с проверкой админа)
 def main_menu(user_id=None):
     keyboard = InlineKeyboardMarkup(row_width=2)
     keyboard.add(
@@ -27,12 +38,10 @@ def main_menu(user_id=None):
         keyboard.add(InlineKeyboardButton("📬 Заявки", callback_data="show_requests"))
     return keyboard
 
-# Навигационная клавиатура
 nav_menu = InlineKeyboardMarkup().add(
     InlineKeyboardButton("↩️ В меню", callback_data="menu")
 )
 
-# Контент по разделам
 section_messages = {
     "complex": [
         ("Жилой комплекс 'Сокол': стиль и комфорт", "media/complex1.jpg"),
@@ -65,15 +74,16 @@ async def process_callback(callback_query: types.CallbackQuery):
 
     elif data == "show_requests":
         if user_id == ADMIN_ID:
-            if not os.path.exists("requests.txt"):
-                await bot.send_message(user_id, "Пока нет заявок.")
-            else:
-                with open("requests.txt", "r", encoding="utf-8") as f:
-                    content = f.read()
-
-                preview = content if len(content) <= 4000 else content[-4000:]  # Telegram ограничение
-                await bot.send_message(user_id, f"📬 Все заявки:\n\n{preview}")
-                await bot.send_document(user_id, InputFile("requests.txt"))
+            try:
+                sheet = get_sheet()
+                data = sheet.get_all_values()
+                if len(data) <= 1:
+                    await bot.send_message(user_id, "Пока нет заявок.")
+                else:
+                    preview = "\n\n".join([f"{row[0]} — {row[2]}\n{row[1]}" for row in data[1:]])
+                    await bot.send_message(user_id, f"📬 Все заявки:\n\n{preview[:4000]}")
+            except Exception as e:
+                await bot.send_message(user_id, f"Ошибка чтения таблицы: {e}")
         else:
             await bot.send_message(user_id, "Эта функция доступна только админу.")
 
@@ -92,17 +102,16 @@ async def process_callback(callback_query: types.CallbackQuery):
 async def handle_user_input(message: types.Message):
     username = message.from_user.username or "без_username"
     date_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    text = f"Заявка от @{username}:\n{message.text}"
+    text = message.text
 
-    # Сохранение в файл
-    with open("requests.txt", "a", encoding="utf-8") as f:
-        f.write(f"[{date_str}] {text}\n")
-
-    # Отправка админу
     try:
-        await bot.send_message(ADMIN_ID, f"{text}\n🕓 {date_str}")
+        sheet = get_sheet()
+        sheet.append_row([f"@{username}", text, date_str])
+        await bot.send_message(ADMIN_ID, f"Новая заявка от @{username}:\n{text}\n🕓 {date_str}")
     except Exception as e:
-        print(f"Ошибка при отправке админу: {e}")
+        await message.answer("Ошибка при сохранении заявки, попробуйте позже.")
+        print("Google Sheets Error:", e)
+        return
 
     await message.answer("Спасибо! Мы получили ваше сообщение.", reply_markup=main_menu(message.from_user.id))
 
