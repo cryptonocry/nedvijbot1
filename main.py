@@ -62,9 +62,9 @@ section_messages = {
     ]
 }
 
-@dp.message_handler(commands=["start"])
-async def start(msg: types.Message):
-    await msg.answer("Выберите интересующий раздел:", reply_markup=main_menu())
+@dp.message_handler()
+async def handle_any_message(message: types.Message):
+    await message.answer("Выберите интересующий раздел:", reply_markup=main_menu())
 
 @dp.callback_query_handler(lambda c: True)
 async def process_callback(callback_query: types.CallbackQuery):
