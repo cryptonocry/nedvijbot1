@@ -159,12 +159,13 @@ async def handle_user_input(message: types.Message):
     await message.answer("Спасибо! Мы получили ваше сообщение.", reply_markup=main_menu(message.from_user.id))
 
 if __name__ == "__main__":
-        try:
+    try:
         sheet = get_sheet()
         values = sheet.get_all_values()
         print("✅ Таблица найдена. Первая строка:")
         print(values[0] if values else "Таблица пуста")
     except Exception as err:
-        print(err)
+        print(f"❌ Ошибка: {err}")
 
     executor.start_polling(dp)
+
