@@ -6,7 +6,7 @@ import os
 TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "280665761"))
 
-bot = Bot(token=TOKEN)
+bot = Bot(token=7665240651:AAHbJ4fBrNQxwcLFO-J1KEHGLTe18q4CaQ4)
 dp = Dispatcher(bot)
 
 def main_menu():
