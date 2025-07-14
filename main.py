@@ -23,19 +23,13 @@ class GalleryState(StatesGroup):
     viewing = State()
 
 # Авторизация в Google Sheets
-import json
-
 def get_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    json_creds = os.getenv("GOOGLE_CREDENTIALS_JSON")
-    if not json_creds:
-        raise Exception("GOOGLE_CREDENTIALS_JSON not set")
-    creds_dict = json.loads(json_creds)
+    creds_dict = json.loads(GOOGLE_CREDENTIALS_JSON)
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
     sheet = client.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
     return sheet
-
 
 def main_menu(user_id=None):
     keyboard = InlineKeyboardMarkup(row_width=2)
@@ -91,8 +85,8 @@ async def send_gallery_item(user_id, section, index):
     if index > 0:
         nav.insert(InlineKeyboardButton("⏮ Назад", callback_data="prev_img"))
     if index < len(items) - 1:
-        nav.insert(InlineKeyboardButton("⏭ Вперёд!", callback_data="next_img"))
-    nav.add(InlineKeyboardButton("↩️ В меню!", callback_data="menu"))
+        nav.insert(InlineKeyboardButton("⏭ Вперёд", callback_data="next_img"))
+    nav.add(InlineKeyboardButton("↩️ В меню", callback_data="menu"))
     with open(image_path, "rb") as photo:
         await bot.send_photo(user_id, photo=photo, caption=text, reply_markup=nav)
 
