@@ -3,34 +3,45 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils import executor
 import os
 
-TOKEN = os.getenv("BOT_TOKEN")
+# Используй переменные окружения в Railway
+TOKEN = os.getenv("BOT_TOKEN", "7665240651:AAHbJ4fBrNQxwcLFO-J1KEHGLTe18q4CaQ4")
 
-bot = Bot(token="7665240651:AAHbJ4fBrNQxwcLFO-J1KEHGLTe18q4CaQ4")
+bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
+# Главное меню
 def main_menu():
     keyboard = InlineKeyboardMarkup(row_width=2)
     keyboard.add(
-        InlineKeyboardButton("\U0001F3E2 Жилой комплекс", callback_data="complex_0"),
-        InlineKeyboardButton("\U0001F30D Район", callback_data="district_0"),
-        InlineKeyboardButton("\U0001F3E0 Квартира", callback_data="apartment_0"),
-        InlineKeyboardButton("\U0001F3A5 Видеообзор", callback_data="video"),
-        InlineKeyboardButton("\U0001F5BC\FE0F Визуализация", callback_data="viz"),
-        InlineKeyboardButton("\U0001F4C5 Запись на просмотр", callback_data="visit"),
-        InlineKeyboardButton("\U0001F46E Команда проекта", callback_data="team"),
-        InlineKeyboardButton("\U0001F91D Партнёр проекта", callback_data="partner"),
+        InlineKeyboardButton("🏢 Жилой комплекс", callback_data="complex_0"),
+        InlineKeyboardButton("🌍 Район", callback_data="district_0"),
+        InlineKeyboardButton("🏠 Квартира", callback_data="apartment_0"),
+        InlineKeyboardButton("🎥 Видеообзор", callback_data="video"),
+        InlineKeyboardButton("🖼️ Визуализация", callback_data="viz"),
+        InlineKeyboardButton("📅 Запись на просмотр", callback_data="visit"),
+        InlineKeyboardButton("👥 Команда проекта", callback_data="team"),
+        InlineKeyboardButton("🤝 Партнёр проекта", callback_data="partner"),
     )
     return keyboard
 
+# Кнопки навигации
 def navigation_buttons(section, index, total):
-    buttons = []
-    if index > 0:
-        buttons.append(InlineKeyboardButton("\u2B05\uFE0F Назад", callback_data=f"{section}_{index-1}"))
-    if index < total - 1:
-        buttons.append(InlineKeyboardButton("\u27A1\uFE0F Вперёд", callback_data=f"{section}_{index+1}"))
-    buttons.append(InlineKeyboardButton("\u21A9\uFE0F В меню", callback_data="menu"))
-    return InlineKeyboardMarkup().add(*buttons)
+    keyboard = InlineKeyboardMarkup(row_width=2)
 
+    if index == 0:
+        keyboard.add(InlineKeyboardButton("➡️ Вперёд", callback_data=f"{section}_{index+1}"))
+    elif index == total - 1:
+        keyboard.add(InlineKeyboardButton("⬅️ Назад", callback_data=f"{section}_{index-1}"))
+    else:
+        keyboard.row(
+            InlineKeyboardButton("⬅️ Назад", callback_data=f"{section}_{index-1}"),
+            InlineKeyboardButton("➡️ Вперёд", callback_data=f"{section}_{index+1}")
+        )
+
+    keyboard.add(InlineKeyboardButton("↩️ Возврат в меню", callback_data="menu"))
+    return keyboard
+
+# Контент по разделам
 section_messages = {
     "complex": [
         ("Жилой комплекс 'Сокол': стиль и комфорт", "media/complex1.jpg"),
@@ -49,10 +60,12 @@ section_messages = {
     ]
 }
 
-@dp.message_handler(commands=["start"])
-async def start(msg: types.Message):
-    await msg.answer("Выберите интересующий раздел:", reply_markup=main_menu())
+# Любое сообщение — главное меню
+@dp.message_handler()
+async def handle_any_message(message: types.Message):
+    await message.answer("Выберите интересующий раздел:", reply_markup=main_menu())
 
+# Обработка всех кнопок
 @dp.callback_query_handler(lambda c: True)
 async def process_callback(callback_query: types.CallbackQuery):
     data = callback_query.data
@@ -60,16 +73,16 @@ async def process_callback(callback_query: types.CallbackQuery):
 
     if data == "menu":
         await bot.send_message(user_id, "Главное меню:", reply_markup=main_menu())
+
     elif data == "visit":
-        keyboard = InlineKeyboardMarkup().add(
+        keyboard = InlineKeyboardMarkup(row_width=1)
+        keyboard.add(
+            InlineKeyboardButton("📞 Позвонить: +79993332211", url="tel:+79993332211"),
             InlineKeyboardButton("✉️ Написать в Telegram", url="https://t.me/vitalllx"),
-            InlineKeyboardButton("↩️ В меню", callback_data="menu")
+            InlineKeyboardButton("↩️ Возврат в меню", callback_data="menu")
         )
-        await bot.send_message(
-            user_id,
-            "Для уточнения информации вы можете позвонить по номеру +79993332211 или написать нам в Telegram: @vitalllx",
-            reply_markup=keyboard
-        )
+        await bot.send_message(user_id, "Для уточнения информации вы можете:", reply_markup=keyboard)
+
     elif "_" in data:
         section, index = data.split("_")
         index = int(index)
@@ -81,9 +94,11 @@ async def process_callback(callback_query: types.CallbackQuery):
         else:
             await bot.send_message(user_id, "Раздел в разработке.", reply_markup=main_menu())
         await callback_query.answer()
+
     else:
         await bot.send_message(user_id, "Раздел в разработке.", reply_markup=main_menu())
         await callback_query.answer()
 
+# Запуск бота
 if __name__ == "__main__":
     executor.start_polling(dp)
