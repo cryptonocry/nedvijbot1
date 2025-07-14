@@ -74,15 +74,13 @@ async def process_callback(callback_query: types.CallbackQuery):
     if data == "menu":
         await bot.send_message(user_id, "Главное меню:", reply_markup=main_menu())
     elif data == "visit":
-        keyboard = InlineKeyboardMarkup().add(
-            InlineKeyboardButton("✉️ Написать в Telegram", url="https://t.me/vitalllx"),
-            InlineKeyboardButton("↩️ В меню", callback_data="menu")
-        )
-        await bot.send_message(
-            user_id,
-            "Для уточнения информации вы можете позвонить по номеру +79993332211 или написать нам в Telegram: @vitalllx",
-            reply_markup=keyboard
-        )
+keyboard = InlineKeyboardMarkup(row_width=1)
+keyboard.add(
+    InlineKeyboardButton("📞 Позвонить: +79993332211", url="tel:+79993332211"),
+    InlineKeyboardButton("✉️ Написать в Telegram", url="https://t.me/vitalllx"),
+    InlineKeyboardButton("↩️ Возврат в меню", callback_data="menu")
+)
+await bot.send_message(user_id, "Для уточнения информации вы можете:", reply_markup=keyboard)
     elif "_" in data:
         section, index = data.split("_")
         index = int(index)
