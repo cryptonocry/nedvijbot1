@@ -23,16 +23,18 @@ class GalleryState(StatesGroup):
     viewing = State()
 
 # Авторизация в Google Sheets через переменную окружения GOOGLE_CREDENTIALS
-# Авторизация в Google Sheets через переменную окружения GOOGLE_CREDENTIALS
 def get_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     google_credentials = os.getenv("GOOGLE_CREDENTIALS")
     if not google_credentials:
         raise ValueError("Переменная окружения GOOGLE_CREDENTIALS не установлена или пуста.")
     try:
-        # Декодируем base64 и преобразуем в JSON
+        # Декодируем base64
         decoded_bytes = base64.b64decode(google_credentials)
-        creds_dict = json.loads(decoded_bytes.decode('utf-8', errors='replace'))
+        # Преобразуем в строку с заменой ошибок и обработкой экранирования
+        decoded_str = decoded_bytes.decode('utf-8', errors='replace')
+        # Исправляем возможные проблемы с экранированием
+        creds_dict = json.loads(decoded_str.replace('\\n', '\n').replace('\\\\', '\\'))
         creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
         client = gspread.authorize(creds)
         sheet = client.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
