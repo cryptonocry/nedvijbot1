@@ -1,7 +1,8 @@
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, InputFile
 from aiogram.utils import executor
 import os
+import datetime
 
 TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "280665761"))
@@ -9,33 +10,29 @@ ADMIN_ID = int(os.getenv("ADMIN_ID", "280665761"))
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
-# Память: кто оставляет заявку
-awaiting_input = {}
-
-# Главное меню
-def main_menu():
+# Главное меню (с проверкой админа)
+def main_menu(user_id=None):
     keyboard = InlineKeyboardMarkup(row_width=2)
     keyboard.add(
-        InlineKeyboardButton("🏢 Жилой комплекс", callback_data="complex_0"),
-        InlineKeyboardButton("🌍 Район", callback_data="district_0"),
-        InlineKeyboardButton("🏠 Квартира", callback_data="apartment_0"),
+        InlineKeyboardButton("🏢 Жилой комплекс", callback_data="complex"),
+        InlineKeyboardButton("🌍 Район", callback_data="district"),
+        InlineKeyboardButton("🏠 Квартира", callback_data="apartment"),
         InlineKeyboardButton("🎥 Видеообзор", callback_data="video"),
         InlineKeyboardButton("🖼️ Визуализация", callback_data="viz"),
         InlineKeyboardButton("📅 Запись на просмотр", callback_data="visit"),
         InlineKeyboardButton("👥 Команда проекта", callback_data="team"),
         InlineKeyboardButton("🤝 Партнёр проекта", callback_data="partner"),
     )
+    if user_id == ADMIN_ID:
+        keyboard.add(InlineKeyboardButton("📬 Заявки", callback_data="show_requests"))
     return keyboard
 
-def navigation_buttons(section, index, total):
-    buttons = []
-    if index > 0:
-        buttons.append(InlineKeyboardButton("⬅️ Назад!", callback_data=f"{section}_{index-1}"))
-    if index < total - 1:
-        buttons.append(InlineKeyboardButton("➡️ Вперёд", callback_data=f"{section}_{index+1}"))
-    buttons.append(InlineKeyboardButton("↩️ В меню", callback_data="menu"))
-    return InlineKeyboardMarkup().add(*buttons)
+# Навигационная клавиатура
+nav_menu = InlineKeyboardMarkup().add(
+    InlineKeyboardButton("↩️ В меню", callback_data="menu")
+)
 
+# Контент по разделам
 section_messages = {
     "complex": [
         ("Жилой комплекс 'Сокол': стиль и комфорт", "media/complex1.jpg"),
@@ -53,7 +50,7 @@ section_messages = {
 
 @dp.message_handler(commands=["start"])
 async def start(msg: types.Message):
-    await msg.answer("Выберите интересующий раздел:", reply_markup=main_menu())
+    await msg.answer("Выберите интересующий раздел:", reply_markup=main_menu(msg.from_user.id))
 
 @dp.callback_query_handler(lambda c: True)
 async def process_callback(callback_query: types.CallbackQuery):
@@ -61,34 +58,53 @@ async def process_callback(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
 
     if data == "menu":
-        await bot.send_message(user_id, "Главное меню:", reply_markup=main_menu())
+        await bot.send_message(user_id, "Выберите интересующий раздел:", reply_markup=main_menu(user_id))
+
     elif data == "visit":
-        awaiting_input[user_id] = True
         await bot.send_message(user_id, "Введите свои данные для записи:")
-    elif "_" in data:
-        section, index = data.split("_")
-        index = int(index)
-        if section in section_messages:
-            text, image_path = section_messages[section][index]
+
+    elif data == "show_requests":
+        if user_id == ADMIN_ID:
+            if not os.path.exists("requests.txt"):
+                await bot.send_message(user_id, "Пока нет заявок.")
+            else:
+                with open("requests.txt", "r", encoding="utf-8") as f:
+                    content = f.read()
+
+                preview = content if len(content) <= 4000 else content[-4000:]  # Telegram ограничение
+                await bot.send_message(user_id, f"📬 Все заявки:\n\n{preview}")
+                await bot.send_document(user_id, InputFile("requests.txt"))
+        else:
+            await bot.send_message(user_id, "Эта функция доступна только админу.")
+
+    elif data in section_messages:
+        for text, image_path in section_messages[data]:
             with open(image_path, "rb") as photo:
-                keyboard = navigation_buttons(section, index, len(section_messages[section]))
-                await bot.send_photo(user_id, photo=photo, caption=text, reply_markup=keyboard)
-        await callback_query.answer()
+                await bot.send_photo(user_id, photo=photo, caption=text)
+        await bot.send_message(user_id, "↩️ Вернуться в меню", reply_markup=nav_menu)
+
     else:
-        await bot.send_message(user_id, f"Раздел: {data} (контент в разработке)", reply_markup=main_menu())
-        await callback_query.answer()
+        await bot.send_message(user_id, f"Раздел: {data} (контент в разработке)", reply_markup=nav_menu)
+
+    await callback_query.answer()
 
 @dp.message_handler(lambda message: message.text and not message.text.startswith("/"))
 async def handle_user_input(message: types.Message):
-    user_id = message.from_user.id
-    if awaiting_input.get(user_id):
-        text = f"Заявка от @{message.from_user.username or 'без_username'}:\n{message.text}"
-        await bot.send_message(ADMIN_ID, text)
-        await message.answer("Спасибо! Мы получили ваше сообщение.", reply_markup=main_menu())
-        awaiting_input.pop(user_id)
-    else:
-        await message.answer("Пожалуйста, выберите раздел из меню.", reply_markup=main_menu())
+    username = message.from_user.username or "без_username"
+    date_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    text = f"Заявка от @{username}:\n{message.text}"
+
+    # Сохранение в файл
+    with open("requests.txt", "a", encoding="utf-8") as f:
+        f.write(f"[{date_str}] {text}\n")
+
+    # Отправка админу
+    try:
+        await bot.send_message(ADMIN_ID, f"{text}\n🕓 {date_str}")
+    except Exception as e:
+        print(f"Ошибка при отправке админу: {e}")
+
+    await message.answer("Спасибо! Мы получили ваше сообщение.", reply_markup=main_menu(message.from_user.id))
 
 if __name__ == "__main__":
     executor.start_polling(dp)
-а
