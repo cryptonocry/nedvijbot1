@@ -59,11 +59,9 @@ async def process_callback(callback_query: types.CallbackQuery):
 
 @dp.message_handler(lambda message: message.text and not message.text.startswith("/"))
 async def handle_user_input(message: types.Message):
-    text = f"Заявка от @{message.from_user.username or 'без username'}:
-{message.text}"
+    text = f"Заявка от @{message.from_user.username or 'без_username'}:\n{message.text}"
     await bot.send_message(ADMIN_ID, text)
     await message.answer("Спасибо! Мы получили ваше сообщение.")
 
 if __name__ == "__main__":
-    from aiogram import executor
     executor.start_polling(dp)
