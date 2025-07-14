@@ -23,13 +23,22 @@ class GalleryState(StatesGroup):
     viewing = State()
 
 # Авторизация в Google Sheets через переменную окружения GOOGLE_CREDENTIALS
+# Авторизация в Google Sheets через переменную окружения GOOGLE_CREDENTIALS
 def get_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds_dict = json.loads(base64.b64decode(os.getenv("GOOGLE_CREDENTIALS")).decode("utf-8"))
-    creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
-    client = gspread.authorize(creds)
-    sheet = client.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
-    return sheet
+    google_credentials = os.getenv("GOOGLE_CREDENTIALS")
+    if not google_credentials:
+        raise ValueError("Переменная окружения GOOGLE_CREDENTIALS не установлена или пуста.")
+    try:
+        # Декодируем base64 и преобразуем в JSON
+        decoded_bytes = base64.b64decode(google_credentials)
+        creds_dict = json.loads(decoded_bytes.decode('utf-8', errors='replace'))
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+        client = gspread.authorize(creds)
+        sheet = client.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
+        return sheet
+    except Exception as e:
+        raise Exception(f"Ошибка авторизации в Google Sheets: {str(e)}")
 
 def main_menu(user_id=None):
     keyboard = InlineKeyboardMarkup(row_width=2)
