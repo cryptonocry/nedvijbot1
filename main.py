@@ -23,13 +23,26 @@ def main_menu():
     return keyboard
 
 def navigation_buttons(section, index, total):
-    buttons = []
-    if index > 0:
-        buttons.append(InlineKeyboardButton("\u2B05\uFE0F Назад", callback_data=f"{section}_{index-1}"))
-    if index < total - 1:
-        buttons.append(InlineKeyboardButton("\u27A1\uFE0F Вперёд", callback_data=f"{section}_{index+1}"))
-    buttons.append(InlineKeyboardButton("\u21A9\uFE0F В меню", callback_data="menu"))
-    return InlineKeyboardMarkup().add(*buttons)
+    keyboard = InlineKeyboardMarkup(row_width=2)
+
+    if index == 0:
+        # Первый слайд: только "Вперёд"
+        keyboard.add(InlineKeyboardButton("➡️ Вперёд", callback_data=f"{section}_{index+1}"))
+    elif index == total - 1:
+        # Последний слайд: только "Назад"
+        keyboard.add(InlineKeyboardButton("⬅️ Назад", callback_data=f"{section}_{index-1}"))
+    else:
+        # Все промежуточные
+        keyboard.row(
+            InlineKeyboardButton("⬅️ Назад", callback_data=f"{section}_{index-1}"),
+            InlineKeyboardButton("➡️ Вперёд", callback_data=f"{section}_{index+1}")
+        )
+
+    # Возврат в меню в отдельной строке
+    keyboard.add(InlineKeyboardButton("↩️ Возврат в меню", callback_data="menu"))
+
+    return keyboard
+
 
 section_messages = {
     "complex": [
