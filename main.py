@@ -91,7 +91,7 @@ async def send_gallery_item(user_id, section, index):
     if index > 0:
         nav.insert(InlineKeyboardButton("⏮ Назад", callback_data="prev_img"))
     if index < len(items) - 1:
-        nav.insert(InlineKeyboardButton("⏭ Вперёд", callback_data="next_img"))
+        nav.insert(InlineKeyboardButton("⏭ Вперёд!", callback_data="next_img"))
     nav.add(InlineKeyboardButton("↩️ В меню", callback_data="menu"))
     with open(image_path, "rb") as photo:
         await bot.send_photo(user_id, photo=photo, caption=text, reply_markup=nav)
