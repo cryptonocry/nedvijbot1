@@ -24,11 +24,13 @@ class GalleryState(StatesGroup):
 # Авторизация в Google Sheets через creds.json
 def get_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    with open("creds.json") as f:
+    with open("creds.json", "r") as f:
         creds_dict = json.load(f)
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
-    return client.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
+    sheet = client.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
+    return sheet
+
 
 def main_menu(user_id=None):
     keyboard = InlineKeyboardMarkup(row_width=2)
