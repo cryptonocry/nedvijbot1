@@ -14,7 +14,6 @@ TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "280665761"))
 SPREADSHEET_NAME = os.getenv("SPREADSHEET_NAME", "Заявки Telegram")
 SHEET_NAME = os.getenv("SHEET_NAME", "Лист1")
-GOOGLE_CREDENTIALS_JSON = os.getenv("GOOGLE_CREDENTIALS_JSON")
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
@@ -22,33 +21,33 @@ dp = Dispatcher(bot, storage=MemoryStorage())
 class GalleryState(StatesGroup):
     viewing = State()
 
-# Авторизация в Google Sheets
+# Авторизация в Google Sheets через creds.json
 def get_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds_dict = json.loads(GOOGLE_CREDENTIALS_JSON)
+    with open("creds.json") as f:
+        creds_dict = json.load(f)
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
-    sheet = client.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
-    return sheet
+    return client.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
 
 def main_menu(user_id=None):
     keyboard = InlineKeyboardMarkup(row_width=2)
     keyboard.add(
-        InlineKeyboardButton("\U0001F3E2 Жилой комплекс", callback_data="complex"),
-        InlineKeyboardButton("\U0001F30D Район", callback_data="district"),
-        InlineKeyboardButton("\U0001F3E0 Квартира", callback_data="apartment"),
-        InlineKeyboardButton("\U0001F4FD Видеообзор", callback_data="video"),
-        InlineKeyboardButton("\U0001F5BC Визуализация", callback_data="viz"),
-        InlineKeyboardButton("\U0001F4C5 Запись на просмотр", callback_data="visit"),
-        InlineKeyboardButton("\U0001F465 Команда проекта", callback_data="team"),
-        InlineKeyboardButton("\U0001F91D Партнёр проекта", callback_data="partner"),
+        InlineKeyboardButton("🏢 Жилой комплекс", callback_data="complex"),
+        InlineKeyboardButton("🌍 Район", callback_data="district"),
+        InlineKeyboardButton("🏠 Квартира", callback_data="apartment"),
+        InlineKeyboardButton("📽 Видеообзор", callback_data="video"),
+        InlineKeyboardButton("🖼 Визуализация", callback_data="viz"),
+        InlineKeyboardButton("📅 Запись на просмотр", callback_data="visit"),
+        InlineKeyboardButton("👥 Команда проекта", callback_data="team"),
+        InlineKeyboardButton("🤝 Партнёр проекта", callback_data="partner"),
     )
     if user_id == ADMIN_ID:
-        keyboard.add(InlineKeyboardButton("\U0001F4EC Заявки", callback_data="show_requests"))
+        keyboard.add(InlineKeyboardButton("📬 Заявки", callback_data="show_requests"))
     return keyboard
 
 nav_menu = InlineKeyboardMarkup().add(
-    InlineKeyboardButton("\u21A9\uFE0F В меню", callback_data="menu")
+    InlineKeyboardButton("↩️ В меню", callback_data="menu")
 )
 
 section_messages = {
@@ -125,7 +124,7 @@ async def show_requests(callback_query: types.CallbackQuery):
                 await bot.send_message(user_id, "Пока нет заявок.")
             else:
                 preview = "\n\n".join([f"{row[0]} — {row[2]}\n{row[1]}" for row in data[1:]])
-                await bot.send_message(user_id, f"\U0001F4EC Все заявки:\n\n{preview[:4000]}")
+                await bot.send_message(user_id, f"📬 Все заявки:\n\n{preview[:4000]}")
         except Exception as e:
             await bot.send_message(user_id, f"Ошибка чтения таблицы: {e}")
     else:
