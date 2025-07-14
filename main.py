@@ -5,7 +5,7 @@ import os
 
 TOKEN = os.getenv("BOT_TOKEN")
 
-bot = Bot(token=7665240651:AAHbJ4fBrNQxwcLFO-J1KEHGLTe18q4CaQ4)
+bot = Bot(token="7665240651:AAHbJ4fBrNQxwcLFO-J1KEHGLTe18q4CaQ4")
 dp = Dispatcher(bot)
 
 def main_menu():
