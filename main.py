@@ -30,7 +30,7 @@ def main_menu():
 def navigation_buttons(section, index, total):
     buttons = []
     if index > 0:
-        buttons.append(InlineKeyboardButton("⬅️ Назад", callback_data=f"{section}_{index-1}"))
+        buttons.append(InlineKeyboardButton("⬅️ Назад!", callback_data=f"{section}_{index-1}"))
     if index < total - 1:
         buttons.append(InlineKeyboardButton("➡️ Вперёд", callback_data=f"{section}_{index+1}"))
     buttons.append(InlineKeyboardButton("↩️ В меню", callback_data="menu"))
@@ -91,3 +91,4 @@ async def handle_user_input(message: types.Message):
 
 if __name__ == "__main__":
     executor.start_polling(dp)
+а
