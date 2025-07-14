@@ -159,6 +159,7 @@ async def handle_user_input(message: types.Message):
     await message.answer("Спасибо! Мы получили ваше сообщение.", reply_markup=main_menu(message.from_user.id))
 
 if __name__ == "__main__":
+    print("DEBUG: GOOGLE_CREDENTIALS =", repr(os.getenv("GOOGLE_CREDENTIALS")))
     try:
         sheet = get_sheet()
         values = sheet.get_all_values()
