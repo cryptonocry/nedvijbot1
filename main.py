@@ -15,7 +15,7 @@ def main_menu():
         InlineKeyboardButton("\U0001F30D Район", callback_data="district_0"),
         InlineKeyboardButton("\U0001F3E0 Квартира", callback_data="apartment_0"),
         InlineKeyboardButton("\U0001F3A5 Видеообзор", callback_data="video"),
-        InlineKeyboardButton("\U0001F5BC Визуализация", callback_data="viz"),
+        InlineKeyboardButton("\U0001F5BC\FE0F Визуализация", callback_data="viz"),
         InlineKeyboardButton("\U0001F4C5 Запись на просмотр", callback_data="visit"),
         InlineKeyboardButton("\U0001F46E Команда проекта", callback_data="team"),
         InlineKeyboardButton("\U0001F91D Партнёр проекта", callback_data="partner"),
@@ -23,26 +23,13 @@ def main_menu():
     return keyboard
 
 def navigation_buttons(section, index, total):
-    keyboard = InlineKeyboardMarkup(row_width=2)
-
-    if index == 0:
-        # Первый слайд: только "Вперёд"
-        keyboard.add(InlineKeyboardButton("➡️ Вперёд", callback_data=f"{section}_{index+1}"))
-    elif index == total - 1:
-        # Последний слайд: только "Назад"
-        keyboard.add(InlineKeyboardButton("⬅️ Назад", callback_data=f"{section}_{index-1}"))
-    else:
-        # Все промежуточные
-        keyboard.row(
-            InlineKeyboardButton("⬅️ Назад", callback_data=f"{section}_{index-1}"),
-            InlineKeyboardButton("➡️ Вперёд", callback_data=f"{section}_{index+1}")
-        )
-
-    # Возврат в меню в отдельной строке
-    keyboard.add(InlineKeyboardButton("↩️ Возврат в меню", callback_data="menu"))
-
-    return keyboard
-
+    buttons = []
+    if index > 0:
+        buttons.append(InlineKeyboardButton("\u2B05\uFE0F Назад", callback_data=f"{section}_{index-1}"))
+    if index < total - 1:
+        buttons.append(InlineKeyboardButton("\u27A1\uFE0F Вперёд", callback_data=f"{section}_{index+1}"))
+    buttons.append(InlineKeyboardButton("\u21A9\uFE0F В меню", callback_data="menu"))
+    return InlineKeyboardMarkup().add(*buttons)
 
 section_messages = {
     "complex": [
@@ -62,9 +49,9 @@ section_messages = {
     ]
 }
 
-@dp.message_handler()
-async def handle_any_message(message: types.Message):
-    await message.answer("Выберите интересующий раздел:", reply_markup=main_menu())
+@dp.message_handler(commands=["start"])
+async def start(msg: types.Message):
+    await msg.answer("Выберите интересующий раздел:", reply_markup=main_menu())
 
 @dp.callback_query_handler(lambda c: True)
 async def process_callback(callback_query: types.CallbackQuery):
@@ -73,14 +60,16 @@ async def process_callback(callback_query: types.CallbackQuery):
 
     if data == "menu":
         await bot.send_message(user_id, "Главное меню:", reply_markup=main_menu())
-elif data == "visit":
-    keyboard = InlineKeyboardMarkup(row_width=1)
-    keyboard.add(
-        InlineKeyboardButton("📞 Позвонить: +79993332211", url="tel:+79993332211"),
-        InlineKeyboardButton("✉️ Написать в Telegram", url="https://t.me/vitalllx"),
-        InlineKeyboardButton("↩️ Возврат в меню", callback_data="menu")
-    )
-    await bot.send_message(user_id, "Для уточнения информации вы можете:", reply_markup=keyboard)
+    elif data == "visit":
+        keyboard = InlineKeyboardMarkup().add(
+            InlineKeyboardButton("✉️ Написать в Telegram", url="https://t.me/vitalllx"),
+            InlineKeyboardButton("↩️ В меню", callback_data="menu")
+        )
+        await bot.send_message(
+            user_id,
+            "Для уточнения информации вы можете позвонить по номеру +79993332211 или написать нам в Telegram: @vitalllx",
+            reply_markup=keyboard
+        )
     elif "_" in data:
         section, index = data.split("_")
         index = int(index)
