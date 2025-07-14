@@ -15,7 +15,7 @@ def main_menu():
         InlineKeyboardButton("\U0001F30D Район", callback_data="district_0"),
         InlineKeyboardButton("\U0001F3E0 Квартира", callback_data="apartment_0"),
         InlineKeyboardButton("\U0001F3A5 Видеообзор", callback_data="video"),
-        InlineKeyboardButton("\U0001F5BC\FE0F Визуализация", callback_data="viz"),
+        InlineKeyboardButton("\U0001F5BC Визуализация", callback_data="viz"),
         InlineKeyboardButton("\U0001F4C5 Запись на просмотр", callback_data="visit"),
         InlineKeyboardButton("\U0001F46E Команда проекта", callback_data="team"),
         InlineKeyboardButton("\U0001F91D Партнёр проекта", callback_data="partner"),
