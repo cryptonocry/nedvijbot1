@@ -23,13 +23,19 @@ class GalleryState(StatesGroup):
     viewing = State()
 
 # Авторизация в Google Sheets
+import json
+
 def get_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds_dict = json.loads(GOOGLE_CREDENTIALS_JSON)
+    json_creds = os.getenv("GOOGLE_CREDENTIALS_JSON")
+    if not json_creds:
+        raise Exception("GOOGLE_CREDENTIALS_JSON not set")
+    creds_dict = json.loads(json_creds)
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
     sheet = client.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
     return sheet
+
 
 def main_menu(user_id=None):
     keyboard = InlineKeyboardMarkup(row_width=2)
