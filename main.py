@@ -7,8 +7,9 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 import os
 import datetime
 import gspread
+import base64
 import json
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 
 TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "280665761"))
@@ -21,16 +22,14 @@ dp = Dispatcher(bot, storage=MemoryStorage())
 class GalleryState(StatesGroup):
     viewing = State()
 
-# Авторизация в Google Sheets через creds.json
+# Авторизация в Google Sheets через переменную окружения GOOGLE_CREDENTIALS
 def get_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    with open("creds.json", "r") as f:
-        creds_dict = json.load(f)
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    creds_dict = json.loads(base64.b64decode(os.getenv("GOOGLE_CREDENTIALS")).decode("utf-8"))
+    creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
     client = gspread.authorize(creds)
     sheet = client.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
     return sheet
-
 
 def main_menu(user_id=None):
     keyboard = InlineKeyboardMarkup(row_width=2)
