@@ -12,8 +12,8 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "280665761"))
-SPREADSHEET_NAME = os.getenv("SPREADSHEET_NAME", "Заявки Telegram")
-SHEET_NAME = os.getenv("SHEET_NAME", "Лист1")
+SPREADSHEET_NAME = "Заявки Telegram"
+SHEET_NAME = "Лист1"
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
