@@ -34,7 +34,7 @@ def get_sheet():
 def main_menu(user_id=None):
     keyboard = InlineKeyboardMarkup(row_width=2)
     keyboard.add(
-        InlineKeyboardButton("🏢 Жилой комплекс", callback_data="complex"),
+        InlineKeyboardButton("🏢 Жилой комплекс!", callback_data="complex"),
         InlineKeyboardButton("🌍 Район", callback_data="district"),
         InlineKeyboardButton("🏠 Квартира", callback_data="apartment"),
         InlineKeyboardButton("📽 Видеообзор", callback_data="video"),
