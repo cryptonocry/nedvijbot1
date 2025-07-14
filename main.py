@@ -8,7 +8,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "280665761"))
-SPREADSHEET_NAME = os.getenv("SPREADSHEET_NAME", "Заявки")
+SPREADSHEET_NAME = os.getenv("SPREADSHEET_NAME", "Заявки Telegram")
 SHEET_NAME = os.getenv("SHEET_NAME", "Лист1")
 
 # Авторизация в Google Sheets
