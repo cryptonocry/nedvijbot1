@@ -54,7 +54,7 @@ section_messages = {
     "apartment": [
         ("Планировка квартиры 72м²", "media/apartment1.jpg"),
         ("Кухня-гостиная в стиле минимализм", "media/apartment2.jpg"),
-        ("Просторная спальня с видом", "media/apartment3.jpg")
+        ("Просторная спальня с видо", "media/apartment3.jpg")
     ]
 }
 
@@ -72,16 +72,24 @@ async def process_callback(callback_query: types.CallbackQuery):
     try:
         if data == "menu":
             await bot.send_message(user_id, "Главное меню:", reply_markup=main_menu())
+            await callback_query.answer()
 
         elif data == "visit":
-            keyboard = InlineKeyboardMarkup(row_width=1)
-            keyboard.add(
-                InlineKeyboardButton("📞 Позвонить: +79993332211", url="tel:+79993332211"),
-                InlineKeyboardButton("✉️ Написать в Telegram", url="https://t.me/vitalllx"),
-                InlineKeyboardButton("↩️ Возврат в меню", callback_data="menu")
-            )
-            await bot.send_message(user_id, "Для уточнения информации вы можете:", reply_markup=keyboard)
-            await callback_query.answer()  # Acknowledge the callback
+            print("Processing 'visit' callback")  # Log to debug
+            try:
+                keyboard = InlineKeyboardMarkup(row_width=1)
+                keyboard.add(
+                    InlineKeyboardButton("📞 Позвонить: +79993332211", url="tel:+79993332211"),
+                    InlineKeyboardButton("✉️ Написать в Telegram", url="https://t.me/vitalllx"),
+                    InlineKeyboardButton("↩️ Возврат в меню", callback_data="menu")
+                )
+                print("Keyboard created successfully")  # Log to debug
+                await bot.send_message(user_id, "Для уточнения информации вы можете:", reply_markup=keyboard)
+                print("Message sent successfully")  # Log to debug
+                await callback_query.answer()
+            except Exception as e:
+                print(f"Error in 'visit' callback: {e}")  # Specific error logging
+                raise  # Re-raise to catch in outer try-except
 
         elif "_" in data:
             section, index = data.split("_")
@@ -92,7 +100,8 @@ async def process_callback(callback_query: types.CallbackQuery):
                     with open(image_path, "rb") as photo:
                         keyboard = navigation_buttons(section, index, len(section_messages[section]))
                         await bot.send_photo(user_id, photo=photo, caption=text, reply_markup=keyboard)
-                except FileNotFoundError:
+                except FileNotFoundError as e:
+                    print(f"File not found: {image_path}, Error: {e}")  # Log file errors
                     await bot.send_message(user_id, "Изображение не найдено.", reply_markup=main_menu())
             else:
                 await bot.send_message(user_id, "Раздел в разработке.", reply_markup=main_menu())
@@ -103,9 +112,9 @@ async def process_callback(callback_query: types.CallbackQuery):
             await callback_query.answer()
 
     except Exception as e:
+        print(f"General error in callback: {e}")  # Log the error
         await bot.send_message(user_id, "Произошла ошибка. Попробуйте снова.", reply_markup=main_menu())
         await callback_query.answer()
-        print(f"Error: {e}")
 
 # Start the bot
 if __name__ == "__main__":
