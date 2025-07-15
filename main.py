@@ -79,7 +79,6 @@ async def process_callback(callback_query: types.CallbackQuery):
             try:
                 keyboard = InlineKeyboardMarkup(row_width=1)
                 keyboard.add(
-                    InlineKeyboardButton("📞 Позвонить: +79993332211", url="tel:+79993332211"),
                     InlineKeyboardButton("✉️ Написать в Telegram", url="https://t.me/vitalllx"),
                     InlineKeyboardButton("↩️ Возврат в меню", callback_data="menu")
                 )
