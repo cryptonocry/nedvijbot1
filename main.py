@@ -3,13 +3,13 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils import executor
 import os
 
-# Используй переменные окружения в Railway
+# Use environment variable for token
 TOKEN = os.getenv("BOT_TOKEN", "7665240651:AAHbJ4fBrNQxwcLFO-J1KEHGLTe18q4CaQ4")
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
-# Главное меню
+# Main menu
 def main_menu():
     keyboard = InlineKeyboardMarkup(row_width=2)
     keyboard.add(
@@ -24,10 +24,9 @@ def main_menu():
     )
     return keyboard
 
-# Кнопки навигации
+# Navigation buttons
 def navigation_buttons(section, index, total):
     keyboard = InlineKeyboardMarkup(row_width=2)
-
     if index == 0:
         keyboard.add(InlineKeyboardButton("➡️ Вперёд", callback_data=f"{section}_{index+1}"))
     elif index == total - 1:
@@ -37,11 +36,10 @@ def navigation_buttons(section, index, total):
             InlineKeyboardButton("⬅️ Назад", callback_data=f"{section}_{index-1}"),
             InlineKeyboardButton("➡️ Вперёд", callback_data=f"{section}_{index+1}")
         )
-
     keyboard.add(InlineKeyboardButton("↩️ Возврат в меню", callback_data="menu"))
     return keyboard
 
-# Контент по разделам
+# Section content
 section_messages = {
     "complex": [
         ("Жилой комплекс 'Сокол': стиль и комфорт", "media/complex1.jpg"),
@@ -60,46 +58,55 @@ section_messages = {
     ]
 }
 
-# Любое сообщение — главное меню
+# Handle any message to show main menu
 @dp.message_handler()
 async def handle_any_message(message: types.Message):
     await message.answer("Выберите интересующий раздел:", reply_markup=main_menu())
 
-# Обработка всех кнопок
+# Handle all callback queries
 @dp.callback_query_handler(lambda c: True)
 async def process_callback(callback_query: types.CallbackQuery):
     data = callback_query.data
     user_id = callback_query.from_user.id
 
-    if data == "menu":
-        await bot.send_message(user_id, "Главное меню:", reply_markup=main_menu())
+    try:
+        if data == "menu":
+            await bot.send_message(user_id, "Главное меню:", reply_markup=main_menu())
 
-    elif data == "visit":
-        keyboard = InlineKeyboardMarkup(row_width=1)
-        keyboard.add(
-            InlineKeyboardButton("📞 Позвонить: +79993332211", url="tel:+79993332211"),
-            InlineKeyboardButton("✉️ Написать в Telegram", url="https://t.me/vitalllx"),
-            InlineKeyboardButton("↩️ Возврат в меню", callback_data="menu")
-        )
-        await bot.send_message(user_id, "Для уточнения информации вы можете:", reply_markup=keyboard)
-        await callback_query.answer()  # ← ВАЖНО: добавь эту строку
-        
-    elif "_" in data:
-        section, index = data.split("_")
-        index = int(index)
-        if section in section_messages:
-            text, image_path = section_messages[section][index]
-            with open(image_path, "rb") as photo:
-                keyboard = navigation_buttons(section, index, len(section_messages[section]))
-                await bot.send_photo(user_id, photo=photo, caption=text, reply_markup=keyboard)
+        elif data == "visit":
+            keyboard = InlineKeyboardMarkup(row_width=1)
+            keyboard.add(
+                InlineKeyboardButton("📞 Позвонить: +79993332211", url="tel:+79993332211"),
+                InlineKeyboardButton("✉️ Написать в Telegram", url="https://t.me/vitalllx"),
+                InlineKeyboardButton("↩️ Возврат в меню", callback_data="menu")
+            )
+            await bot.send_message(user_id, "Для уточнения информации вы можете:", reply_markup=keyboard)
+            await callback_query.answer()  # Acknowledge the callback
+
+        elif "_" in data:
+            section, index = data.split("_")
+            index = int(index)
+            if section in section_messages and 0 <= index < len(section_messages[section]):
+                text, image_path = section_messages[section][index]
+                try:
+                    with open(image_path, "rb") as photo:
+                        keyboard = navigation_buttons(section, index, len(section_messages[section]))
+                        await bot.send_photo(user_id, photo=photo, caption=text, reply_markup=keyboard)
+                except FileNotFoundError:
+                    await bot.send_message(user_id, "Изображение не найдено.", reply_markup=main_menu())
+            else:
+                await bot.send_message(user_id, "Раздел в разработке.", reply_markup=main_menu())
+            await callback_query.answer()
+
         else:
             await bot.send_message(user_id, "Раздел в разработке.", reply_markup=main_menu())
-        await callback_query.answer()
+            await callback_query.answer()
 
-    else:
-        await bot.send_message(user_id, "Раздел в разработке.", reply_markup=main_menu())
+    except Exception as e:
+        await bot.send_message(user_id, "Произошла ошибка. Попробуйте снова.", reply_markup=main_menu())
         await callback_query.answer()
+        print(f"Error: {e}")
 
-# Запуск бота
+# Start the bot
 if __name__ == "__main__":
-    executor.start_polling(dp)
+    executor.start_polling(dp, skip_updates=True)
