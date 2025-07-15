@@ -82,7 +82,8 @@ async def process_callback(callback_query: types.CallbackQuery):
             InlineKeyboardButton("↩️ Возврат в меню", callback_data="menu")
         )
         await bot.send_message(user_id, "Для уточнения информации вы можете:", reply_markup=keyboard)
-
+        await callback_query.answer()  # ← ВАЖНО: добавь эту строку
+        
     elif "_" in data:
         section, index = data.split("_")
         index = int(index)
